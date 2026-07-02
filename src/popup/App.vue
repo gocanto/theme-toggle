@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Ban, Check, MonitorCog, Moon, RotateCcw, Sparkles } from '@lucide/vue';
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 import { Button } from '@/popup/components/ui/button';
 import { Slider } from '@/popup/components/ui/slider';
 import { Switch } from '@/popup/components/ui/switch';
+import { PopupController } from '@/popup/composables/PopupController';
+import { TimedStatus } from '@/popup/composables/TimedStatus';
 import { cn } from '@/lib/utils';
-
-import { DEFAULT_SETTINGS, type ExtensionState, type PopupMessage, type Settings, type ThemeMode, migrateSettings, normalizeHost } from '@/types/settings';
+import type { ThemeMode } from '@/types/settings';
 
 const modes: Array<{ value: ThemeMode; label: string }> = [
 	{ value: 'smart', label: 'Smart' },
@@ -14,268 +15,26 @@ const modes: Array<{ value: ThemeMode; label: string }> = [
 	{ value: 'soft', label: 'Soft' },
 ];
 
-const activeTabId = ref<number | null>(null);
-
-const activeTabUrl = ref('');
-
-const currentState = ref<ExtensionState>(buildState(DEFAULT_SETTINGS));
-
-const status = ref('');
-
-const statusTimer = ref<number | null>(null);
-
-const settings = computed(() => currentState.value.settings);
-
-const isExtensionRuntime = computed(() => typeof chrome !== 'undefined' && Boolean(chrome.tabs && chrome.storage && chrome.scripting));
-
-const hostLabel = computed(() => currentState.value.host || 'Preview mode');
-
-const siteActionLabel = computed(() => (currentState.value.siteEnabled ? 'Disable here' : 'Enable here'));
-
-function setStatus(text: string) {
-	status.value = text;
-	if (statusTimer.value) {
-		window.clearTimeout(statusTimer.value);
-	}
-
-	statusTimer.value = window.setTimeout(() => {
-		status.value = '';
-	}, 1500);
-}
-
-function getActiveHost() {
-	if (!activeTabUrl.value) {
-		return '';
-	}
-
-	try {
-		const url = new URL(activeTabUrl.value);
-
-		return normalizeHost(url.hostname || '');
-	} catch {
-		return '';
-	}
-}
-
-function canInjectIntoTab() {
-	if (!activeTabUrl.value) {
-		return false;
-	}
-
-	try {
-		const url = new URL(activeTabUrl.value);
-
-		return url.protocol === 'http:' || url.protocol === 'https:';
-	} catch {
-		return false;
-	}
-}
-
-function buildState(nextSettings: Settings): ExtensionState {
-	const host = getActiveHost();
-	const siteEnabled = nextSettings.siteOverrides?.[host] ?? true;
-
-	return {
-		settings: nextSettings,
-		host,
-		active: Boolean(nextSettings.enabled && siteEnabled),
-		siteEnabled,
-	};
-}
-
-function sendToTab(message: PopupMessage) {
-	return new Promise<ExtensionState>((resolve, reject) => {
-		if (!activeTabId.value) {
-			reject(new Error('No active tab'));
-
-			return;
-		}
-
-		chrome.tabs.sendMessage(activeTabId.value, message, (response: ExtensionState) => {
-			const error = chrome.runtime.lastError;
-
-			if (error) {
-				reject(new Error(error.message));
-
-				return;
-			}
-
-			resolve(response);
-		});
-	});
-}
-
-async function injectContentScript() {
-	if (!activeTabId.value) {
-		throw new Error('No active tab');
-	}
-
-	await chrome.scripting.executeScript({
-		target: { tabId: activeTabId.value, allFrames: true },
-		files: ['src/content.js'],
-	});
-}
-
-async function readSettings() {
-	if (!isExtensionRuntime.value) {
-		return DEFAULT_SETTINGS;
-	}
-
-	const settings = await chrome.storage.sync.get(null);
-
-	return migrateSettings(settings as Partial<Settings>);
-}
-
-async function writeSettings(nextSettings: Settings) {
-	if (!isExtensionRuntime.value) {
-		return;
-	}
-
-	await chrome.storage.sync.set(nextSettings);
-}
-
-async function applySettingsToActiveTab(nextSettings: Settings) {
-	if (!isExtensionRuntime.value || !canInjectIntoTab()) {
-		await writeSettings(nextSettings);
-
-		return buildState(nextSettings);
-	}
-
-	try {
-		return await sendToTab({
-			source: 'personal-dark-mode-lite',
-			type: 'set-settings',
-			patch: nextSettings,
-		});
-	} catch {
-		try {
-			await injectContentScript();
-
-			return await sendToTab({
-				source: 'personal-dark-mode-lite',
-				type: 'set-settings',
-				patch: nextSettings,
-			});
-		} catch {
-			await writeSettings(nextSettings);
-
-			return buildState(nextSettings);
-		}
-	}
-}
-
-async function getStateFromTab() {
-	try {
-		return await sendToTab({ source: 'personal-dark-mode-lite', type: 'get-state' });
-	} catch (error) {
-		if (!canInjectIntoTab()) {
-			throw error;
-		}
-
-		await injectContentScript();
-
-		return sendToTab({ source: 'personal-dark-mode-lite', type: 'get-state' });
-	}
-}
-
-async function getState() {
-	if (isExtensionRuntime.value && canInjectIntoTab()) {
-		return getStateFromTab();
-	}
-
-	return buildState(await readSettings());
-}
-
-async function patchSettings(patch: Partial<Settings>, message = 'Saved') {
-	const existing = currentState.value.settings || (await readSettings());
-
-	const nextSettings = migrateSettings({
-		...existing,
-		...patch,
-		siteOverrides: {
-			...existing.siteOverrides,
-			...(patch.siteOverrides || {}),
-		},
-	});
-
-	currentState.value = await applySettingsToActiveTab(nextSettings);
-
-	setStatus(message);
-}
-
-async function replaceSettings(nextSettings: Settings, message = 'Saved') {
-	const normalizedSettings = migrateSettings(nextSettings);
-
-	currentState.value = await applySettingsToActiveTab(normalizedSettings);
-
-	setStatus(message);
-}
-
-async function selectMode(mode: ThemeMode) {
-	const host = currentState.value.host || getActiveHost();
-	const siteOverrides = { ...currentState.value.settings.siteOverrides };
-
-	if (host) {
-		siteOverrides[host] = true;
-	}
-
-	await patchSettings({ mode, siteOverrides }, 'Saved');
-}
-
-async function toggleSite() {
-	const host = currentState.value.host || getActiveHost();
-
-	if (!host) {
-		setStatus('Open a website tab');
-
-		return;
-	}
-
-	const siteEnabled = currentState.value.settings.siteOverrides?.[host] ?? true;
-
-	await patchSettings(
-		{
-			siteOverrides: {
-				...currentState.value.settings.siteOverrides,
-				[host]: !siteEnabled,
-			},
-		},
-		siteEnabled ? 'Disabled here' : 'Enabled here',
-	);
-}
-
-async function resetSettings() {
-	await replaceSettings(DEFAULT_SETTINGS, 'Reset');
-}
-
-function showError(error: unknown) {
-	console.error(error);
-	setStatus(error instanceof Error ? error.message : 'Unavailable');
-}
-
-async function init() {
-	if (!isExtensionRuntime.value) {
-		currentState.value = buildState(DEFAULT_SETTINGS);
-
-		return;
-	}
-
-	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-	activeTabId.value = tab?.id || null;
-	activeTabUrl.value = tab?.url || '';
-
-	try {
-		currentState.value = await getState();
-	} catch (error) {
-		currentState.value = buildState(await readSettings());
-
-		showError(error);
-	}
-}
+const statusController = new TimedStatus();
+const popupController = new PopupController(statusController);
+const status = statusController.status;
+const currentState = popupController.currentState;
+const hostLabel = popupController.hostLabel;
+const settings = popupController.settings;
+const siteActionLabel = popupController.siteActionLabel;
+const init = popupController.init.bind(popupController);
+const patchSettings = popupController.patchSettings.bind(popupController);
+const resetSettings = popupController.resetSettings.bind(popupController);
+const selectMode = popupController.selectMode.bind(popupController);
+const showError = popupController.showError.bind(popupController);
+const toggleSite = popupController.toggleSite.bind(popupController);
 
 onMounted(() => {
 	init().catch(showError);
+});
+
+onUnmounted(() => {
+	statusController.dispose();
 });
 </script>
 
