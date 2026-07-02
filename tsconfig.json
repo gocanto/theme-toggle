@@ -15,7 +15,12 @@
     "types": ["chrome"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@popup/*": ["src/popup/*"],
+      "@components/*": ["src/popup/components/*"],
+      "@composables/*": ["src/popup/composables/*"],
+      "@lib/*": ["src/lib/*"],
+      "@types/*": ["src/types/*"]
     }
   },
   "include": [

@@ -7,8 +7,12 @@
     "baseColor": "neutral"
   },
   "aliases": {
-    "components": "@/popup/components",
-    "utils": "@/lib/utils"
+    "components": "@components",
+    "utils": "@lib/utils",
+    "popup": "@popup",
+    "composables": "@composables",
+    "lib": "@lib",
+    "types": "@types"
   },
   "iconLibrary": "lucide"
 }

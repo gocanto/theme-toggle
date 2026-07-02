@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Personal Dark Mode Lite",
-  "description": "A compact personal dark-mode extension built with Vue and Tailwind CSS.",
+  "name": "Dark Mode - Lite",
+  "description": "A compact dark-mode extension built with Vue and Tailwind CSS.",
   "version": "0.1.0",
   "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "action": {
-    "default_title": "Personal Dark Mode Lite",
+    "default_title": "Dark Mode - Lite",
     "default_popup": "popup/index.html"
   },
   "content_scripts": [

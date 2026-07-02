@@ -1,4 +1,4 @@
-# Personal Dark Mode Lite
+# Dark Mode - Lite
 
 A compact Chrome extension that applies dark mode to regular web pages. The project now builds an MV3 extension with Vite+, Vue, TypeScript, Tailwind CSS 4, and shadcn-vue style components.
 
@@ -27,6 +27,7 @@ A compact Chrome extension that applies dark mode to regular web pages. The proj
 ## Development
 
 - `npm run dev` starts the Vite popup preview.
+- `pnpm run format` and `pnpm run format-all` format through the go-fmt wrapper.
 - `npm run typecheck` runs Vue and TypeScript checks.
 - `npm run build` emits the loadable extension under `dist`.
 - `npm run check` runs typecheck and build together.
@@ -35,4 +36,4 @@ A compact Chrome extension that applies dark mode to regular web pages. The proj
 
 This is intentionally not a full Dark Reader clone. It does not parse every CSS rule,
 generate site-specific color maps, sync public site fixes, or handle every shadow DOM
-edge case. It is meant to be a compact personal extension you can inspect and modify.
+edge case. It is meant to be a compact extension you can inspect and modify.

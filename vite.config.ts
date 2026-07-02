@@ -4,6 +4,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite-plus';
 
+const sourceRoot = resolve(__dirname, 'src');
+const popupHtmlEntry = resolve(__dirname, 'popup/index.html');
+const contentScriptEntry = resolve(sourceRoot, 'content.ts');
+const contentScriptOutput = 'src/content.js';
+
 export default defineConfig({
 	plugins: [
 		vue(),
@@ -21,25 +26,26 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			'@': resolve(__dirname, 'src'),
+			'@': sourceRoot,
+			'@popup': resolve(sourceRoot, 'popup'),
+			'@components': resolve(sourceRoot, 'popup/components'),
+			'@composables': resolve(sourceRoot, 'popup/composables'),
+			'@lib': resolve(sourceRoot, 'lib'),
+			'@types': resolve(sourceRoot, 'types'),
 		},
 	},
 	build: {
 		emptyOutDir: true,
 		rollupOptions: {
 			input: {
-				popup: resolve(__dirname, 'popup/index.html'),
-				content: resolve(__dirname, 'src/content.ts'),
+				popup: popupHtmlEntry,
+				content: contentScriptEntry,
 			},
 			output: {
-				entryFileNames: (chunk) => (chunk.name === 'content' ? 'src/content.js' : 'assets/[name].js'),
+				entryFileNames: (chunk) => (chunk.name === 'content' ? contentScriptOutput : 'assets/[name].js'),
 				chunkFileNames: 'assets/[name].js',
 				assetFileNames: 'assets/[name][extname]',
 			},
 		},
-	},
-	fmt: {
-		semi: true,
-		singleQuote: false,
 	},
 });

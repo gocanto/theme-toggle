@@ -1,5 +1,5 @@
 {
-  "name": "personal-dark-mode-lite",
+  "name": "dark-mode-lite",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "vue-tsc --noEmit",
-    "check": "pnpm run typecheck && pnpm run build",
+    "check:paths": "node scripts/check-paths.ts",
+    "check": "pnpm run check:paths && pnpm run typecheck && pnpm run build",
     "format": "node scripts/format.ts changed",
     "format-all": "node scripts/format.ts all"
   },

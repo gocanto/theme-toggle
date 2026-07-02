@@ -2,14 +2,14 @@
 	const SCRIPT_VERSION = 5;
 
 	const loader = globalThis as typeof globalThis & {
-		__PERSONAL_DARK_MODE_LITE_LOADED__?: number;
+		__DARK_MODE_LITE_LOADED__?: number;
 	};
 
-	if ((loader.__PERSONAL_DARK_MODE_LITE_LOADED__ || 0) >= SCRIPT_VERSION) {
+	if ((loader.__DARK_MODE_LITE_LOADED__ || 0) >= SCRIPT_VERSION) {
 		return;
 	}
 
-	loader.__PERSONAL_DARK_MODE_LITE_LOADED__ = SCRIPT_VERSION;
+	loader.__DARK_MODE_LITE_LOADED__ = SCRIPT_VERSION;
 
 	type ThemeMode = 'smart' | 'invert' | 'soft';
 
@@ -39,9 +39,13 @@
 
 	type StoredStyle = Record<string, { value: string; priority: string }>;
 
-	const STYLE_ID = 'personal-dark-mode-lite-style';
-	const ROOT_ATTR = 'data-pdm-lite-active';
-	const MODE_ATTR = 'data-pdm-lite-mode';
+	const MESSAGE_SOURCE = 'dark-mode-lite';
+	const STYLE_ID = 'dark-mode-lite-style';
+	const LEGACY_STYLE_ID = 'personal-dark-mode-lite-style';
+	const ROOT_ATTR = 'data-dm-lite-active';
+	const MODE_ATTR = 'data-dm-lite-mode';
+	const LEGACY_ROOT_ATTR = 'data-pdm-lite-active';
+	const LEGACY_MODE_ATTR = 'data-pdm-lite-mode';
 
 	const DEFAULT_SETTINGS: Settings = {
 		enabled: true,
@@ -284,19 +288,19 @@
 		return `
       html[${ROOT_ATTR}="true"] {
         color-scheme: dark !important;
-        --pdm-lite-bg: #111318;
-        --pdm-lite-surface: #1a1d24;
-        --pdm-lite-surface-2: #232833;
-        --pdm-lite-text: #e9edf5;
-        --pdm-lite-muted: #aab2c2;
-        --pdm-lite-link: #8ab4ff;
-        --pdm-lite-border: rgba(255, 255, 255, 0.22);
+        --dm-lite-bg: #111318;
+        --dm-lite-surface: #1a1d24;
+        --dm-lite-surface-2: #232833;
+        --dm-lite-text: #e9edf5;
+        --dm-lite-muted: #aab2c2;
+        --dm-lite-link: #8ab4ff;
+        --dm-lite-border: rgba(255, 255, 255, 0.22);
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"],
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] body {
-        background: var(--pdm-lite-bg) !important;
-        color: var(--pdm-lite-text) !important;
+        background: var(--dm-lite-bg) !important;
+        color: var(--dm-lite-text) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] :where(
@@ -318,12 +322,12 @@
         th,
         td
       ) {
-        color: var(--pdm-lite-text) !important;
-        border-color: var(--pdm-lite-border) !important;
+        color: var(--dm-lite-text) !important;
+        border-color: var(--dm-lite-border) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] :where(a, a *) {
-        color: var(--pdm-lite-link) !important;
+        color: var(--dm-lite-link) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] :where(
@@ -334,8 +338,8 @@
         [style*="background: rgb(255"],
         [style*="background-color: rgb(255"]
       ) {
-        background: var(--pdm-lite-bg) !important;
-        background-color: var(--pdm-lite-bg) !important;
+        background: var(--dm-lite-bg) !important;
+        background-color: var(--dm-lite-bg) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] img,
@@ -351,9 +355,9 @@
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] textarea,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] select,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="smart"] button {
-        background-color: var(--pdm-lite-surface) !important;
-        border-color: var(--pdm-lite-border) !important;
-        color: var(--pdm-lite-text) !important;
+        background-color: var(--dm-lite-surface) !important;
+        border-color: var(--dm-lite-border) !important;
+        color: var(--dm-lite-text) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="invert"] {
@@ -373,8 +377,8 @@
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"],
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] body {
-        background: var(--pdm-lite-bg) !important;
-        color: var(--pdm-lite-text) !important;
+        background: var(--dm-lite-bg) !important;
+        color: var(--dm-lite-text) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] body,
@@ -388,8 +392,8 @@
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] div,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] form,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] dialog {
-        background-color: var(--pdm-lite-bg) !important;
-        border-color: var(--pdm-lite-border) !important;
+        background-color: var(--dm-lite-bg) !important;
+        border-color: var(--dm-lite-border) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] p,
@@ -409,34 +413,40 @@
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] table,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] th,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] td {
-        color: var(--pdm-lite-text) !important;
-        border-color: var(--pdm-lite-border) !important;
+        color: var(--dm-lite-text) !important;
+        border-color: var(--dm-lite-border) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] a {
-        color: var(--pdm-lite-link) !important;
+        color: var(--dm-lite-link) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] input,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] textarea,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] select,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] button {
-        background-color: var(--pdm-lite-surface) !important;
-        border-color: var(--pdm-lite-border) !important;
-        color: var(--pdm-lite-text) !important;
+        background-color: var(--dm-lite-surface) !important;
+        border-color: var(--dm-lite-border) !important;
+        color: var(--dm-lite-text) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] input::placeholder,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] textarea::placeholder {
-        color: var(--pdm-lite-muted) !important;
+        color: var(--dm-lite-muted) !important;
       }
 
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] pre,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] code,
       html[${ROOT_ATTR}="true"][${MODE_ATTR}="soft"] blockquote {
-        background-color: var(--pdm-lite-surface-2) !important;
+        background-color: var(--dm-lite-surface-2) !important;
       }
     `;
+	}
+
+	function cleanupLegacyNamespace(root = document.documentElement) {
+		document.getElementById(LEGACY_STYLE_ID)?.remove();
+		root.removeAttribute(LEGACY_ROOT_ATTR);
+		root.removeAttribute(LEGACY_MODE_ATTR);
 	}
 
 	function ensureStyle() {
@@ -445,7 +455,7 @@
 		if (!style) {
 			style = document.createElement('style');
 			style.id = STYLE_ID;
-			style.setAttribute('data-owner', 'personal-dark-mode-lite');
+			style.setAttribute('data-owner', 'dark-mode-lite');
 			(document.documentElement || document.head || document).appendChild(style);
 		}
 
@@ -459,6 +469,9 @@
 
 		const root = document.documentElement;
 		const active = isActive(settings);
+
+		cleanupLegacyNamespace(root);
+
 		const style = ensureStyle();
 		const mode = ['smart', 'soft', 'invert'].includes(settings.mode) ? settings.mode : 'smart';
 
@@ -509,7 +522,7 @@
 	}
 
 	chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-		if (!message || message.source !== 'personal-dark-mode-lite') {
+		if (!message || message.source !== MESSAGE_SOURCE) {
 			return false;
 		}
 

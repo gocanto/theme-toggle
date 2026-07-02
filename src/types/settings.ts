@@ -27,10 +27,12 @@ export interface ExtensionState {
 	siteEnabled: boolean;
 }
 
+export const EXTENSION_MESSAGE_SOURCE = 'dark-mode-lite';
+
 export type PopupMessage =
-	| { source: 'personal-dark-mode-lite'; type: 'get-state' }
-	| { source: 'personal-dark-mode-lite'; type: 'set-settings'; patch: Partial<Settings> }
-	| { source: 'personal-dark-mode-lite'; type: 'toggle-site' };
+	| { source: typeof EXTENSION_MESSAGE_SOURCE; type: 'get-state' }
+	| { source: typeof EXTENSION_MESSAGE_SOURCE; type: 'set-settings'; patch: Partial<Settings> }
+	| { source: typeof EXTENSION_MESSAGE_SOURCE; type: 'toggle-site' };
 
 export function normalizeHost(host: string) {
 	return host.replace(/^www\./, '');
