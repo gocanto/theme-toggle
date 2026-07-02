@@ -1,0 +1,17 @@
+- Use Playwright-managed Chromium for browser E2E tests, locally and in CI.
+- CI is PR-only, with one exception: on push to `main`, the `Coverage (main)` workflow recomputes coverage (unit, features, and the full E2E matrix) and commits the refreshed coverage table into the README (with `[skip ci]`). Do not add other jobs to `main`.
+- Coverage is reported natively on GitHub (no Codecov): a sticky PR comment per PR and the README table on merge. PRs must keep overall and patch coverage at ≥ 50% on lines, functions, and branches. This gate is enforced only by the `coverage-all` job, so apply `coverage-all` before merging anything that should be coverage-checked.
+- PR CI runs fast unit & feature tests automatically on every PR (draft or ready).
+- Heavier jobs are opt-in via PR labels and skip unless the label is applied:
+  - `coverage-all`: run unit & feature COVERAGE (instrumented) instead of the fast tests, and post the sticky coverage comment enforcing ≥ 50%. Exactly one of fast tests vs coverage runs, never both.
+  - `e2e-*` (e.g. `e2e-all`): run the selective E2E coverage matrix. Ready-for-review PRs only — E2E does not run on draft PRs.
+- Applying or removing a label re-triggers the workflow (the `pull_request` trigger includes `labeled`/`unlabeled`), so labels take effect immediately.
+- CodeRabbit AI review is gated by the `coderabbit` PR label via `.coderabbit.yaml` (`reviews.auto_review.labels`), not a workflow: apply the label to opt a PR into review. Unlabeled PRs are not reviewed, and drafts are skipped even when labeled.
+- Store all browser screenshots, videos, traces, and test artifacts under `/Users/gocanto/.cache/codex/browser-artifacts`.
+- Do not write browser test artifacts into project directories unless explicitly requested.
+- For TypeScript work, follow `.agents/skills/typescript-coding-standards` unless a more specific repo convention conflicts.
+- For TS/JS/Vue module imports and exports, follow `.agents/skills/no-relative-module-specifiers`: never use module specifiers starting with `./` or `../`; use repo aliases instead.
+- For Better Auth configuration work (server/client, sessions, database adapters, plugins, env), follow `.agents/skills/better-auth-best-practices`. Better Auth is already integrated in `packages/auth`.
+- To scaffold Better Auth in a new TS/JS project, use `.agents/skills/better-auth-create-auth`.
+- Always run `make format-all` before pushing.
+- Do not install dependencies without explicit user approval.
