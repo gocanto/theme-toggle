@@ -1,0 +1,4 @@
+interface:
+  display_name: "No Relative Module Specifiers"
+  short_description: "Enforce repo alias imports"
+  default_prompt: "Use $no-relative-module-specifiers when changing TS/JS/Vue imports or exports."

@@ -2,6 +2,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { PopupController } from '@composables/PopupController';
 import { TimedStatus } from '@composables/TimedStatus';
 
+/** Create and bind the popup controller to the Vue component lifecycle. */
 export function usePopupController() {
 	const statusController = new TimedStatus();
 	const popupController = new PopupController(statusController);

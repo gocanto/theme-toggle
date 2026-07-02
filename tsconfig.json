@@ -12,6 +12,10 @@
     "noEmit": true,
     "jsx": "preserve",
     "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
     "types": ["chrome"],
     "baseUrl": ".",
     "paths": {

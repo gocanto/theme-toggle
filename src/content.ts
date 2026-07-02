@@ -23,12 +23,27 @@
 		siteOverrides: Record<string, boolean>;
 	}
 
+	interface SettingsPatch {
+		enabled?: boolean;
+		mode?: ThemeMode;
+		brightness?: number;
+		contrast?: number;
+		sepia?: number;
+		settingsVersion?: number;
+		siteOverrides?: Record<string, boolean>;
+	}
+
 	interface ExtensionState {
 		settings: Settings;
 		host: string;
 		active: boolean;
 		siteEnabled: boolean;
 	}
+
+	type PopupMessage =
+		| { source: typeof MESSAGE_SOURCE; type: 'get-state' }
+		| { source: typeof MESSAGE_SOURCE; type: 'set-settings'; patch: SettingsPatch }
+		| { source: typeof MESSAGE_SOURCE; type: 'toggle-site' };
 
 	interface Color {
 		r: number;
@@ -94,15 +109,19 @@
 
 	function parseColor(value: string) {
 		const match = String(value).match(/rgba?\(([^)]+)\)/);
+		const colorChannels = match?.[1];
 
-		if (!match) {
+		if (!colorChannels) {
 			return null;
 		}
 
-		const parts = match[1].split(',').map((part) => Number.parseFloat(part.trim()));
-		const [r, g, b, a = 1] = parts;
+		const parts = colorChannels.split(',').map((part) => Number.parseFloat(part.trim()));
+		const r = parts[0];
+		const g = parts[1];
+		const b = parts[2];
+		const a = parts[3] ?? 1;
 
-		if (![r, g, b, a].every(Number.isFinite) || a === 0) {
+		if (r === undefined || g === undefined || b === undefined || ![r, g, b, a].every(Number.isFinite) || a === 0) {
 			return null;
 		}
 
@@ -261,23 +280,151 @@
 		restoreSmartStyles();
 	}
 
-	function migrateSettings(storedSettings?: Partial<Settings> | null): Settings {
+	function parseThemeMode(input: unknown): ThemeMode {
+		if (input === 'smart' || input === 'invert' || input === 'soft') {
+			return input;
+		}
+
+		return DEFAULT_SETTINGS.mode;
+	}
+
+	function parseSettingsPatch(input: unknown): SettingsPatch {
+		if (!isRecord(input)) {
+			return {};
+		}
+
+		const patch: SettingsPatch = {};
+
+		if (typeof input.enabled === 'boolean') {
+			patch.enabled = input.enabled;
+		}
+
+		if (typeof input.mode === 'string') {
+			patch.mode = parseThemeMode(input.mode);
+		}
+
+		const brightness = parseNumberInRange(input.brightness, 50, 150);
+
+		if (brightness !== undefined) {
+			patch.brightness = brightness;
+		}
+
+		const contrast = parseNumberInRange(input.contrast, 50, 150);
+
+		if (contrast !== undefined) {
+			patch.contrast = contrast;
+		}
+
+		const sepia = parseNumberInRange(input.sepia, 0, 100);
+
+		if (sepia !== undefined) {
+			patch.sepia = sepia;
+		}
+
+		const settingsVersion = parseFiniteNumber(input.settingsVersion);
+
+		if (settingsVersion !== undefined) {
+			patch.settingsVersion = settingsVersion;
+		}
+
+		const siteOverrides = parseSiteOverrides(input.siteOverrides);
+
+		if (siteOverrides !== undefined) {
+			patch.siteOverrides = siteOverrides;
+		}
+
+		return patch;
+	}
+
+	function migrateSettings(storedSettings?: unknown): Settings {
+		const patch = parseSettingsPatch(storedSettings);
+
 		const nextSettings: Settings = {
 			...DEFAULT_SETTINGS,
-			...(storedSettings || {}),
+			...patch,
 			siteOverrides: {
 				...DEFAULT_SETTINGS.siteOverrides,
-				...(storedSettings?.siteOverrides || {}),
+				...(patch.siteOverrides ?? {}),
 			},
 		};
 
-		if (!storedSettings?.settingsVersion && storedSettings?.mode === 'invert') {
+		if (isLegacyInvertSettings(storedSettings)) {
 			nextSettings.mode = 'smart';
 		}
 
 		nextSettings.settingsVersion = DEFAULT_SETTINGS.settingsVersion;
 
 		return nextSettings;
+	}
+
+	function parsePopupMessage(input: unknown): PopupMessage | null {
+		if (!isRecord(input) || input.source !== MESSAGE_SOURCE) {
+			return null;
+		}
+
+		if (input.type === 'get-state') {
+			return { source: MESSAGE_SOURCE, type: 'get-state' };
+		}
+
+		if (input.type === 'toggle-site') {
+			return { source: MESSAGE_SOURCE, type: 'toggle-site' };
+		}
+
+		if (input.type === 'set-settings') {
+			return {
+				source: MESSAGE_SOURCE,
+				type: 'set-settings',
+				patch: parseSettingsPatch(input.patch),
+			};
+		}
+
+		return null;
+	}
+
+	function isRecord(input: unknown): input is Record<string, unknown> {
+		return typeof input === 'object' && input !== null && !Array.isArray(input);
+	}
+
+	function parseFiniteNumber(input: unknown): number | undefined {
+		if (typeof input !== 'number' || !Number.isFinite(input)) {
+			return undefined;
+		}
+
+		return input;
+	}
+
+	function parseNumberInRange(input: unknown, min: number, max: number): number | undefined {
+		const number = parseFiniteNumber(input);
+
+		if (number === undefined) {
+			return undefined;
+		}
+
+		return Math.min(max, Math.max(min, number));
+	}
+
+	function parseSiteOverrides(input: unknown): Record<string, boolean> | undefined {
+		if (!isRecord(input)) {
+			return undefined;
+		}
+
+		const siteOverrides: Record<string, boolean> = {};
+
+		for (const [host, enabled] of Object.entries(input)) {
+			if (typeof enabled === 'boolean') {
+				siteOverrides[normalizeHost(host)] = enabled;
+			}
+		}
+
+		return siteOverrides;
+	}
+
+	function isLegacyInvertSettings(input: unknown) {
+		if (!isRecord(input)) {
+			return false;
+		}
+
+		return !parseFiniteNumber(input.settingsVersion) && input.mode === 'invert';
 	}
 
 	function createCSS(nextSettings: Settings) {
@@ -450,19 +597,22 @@
 	}
 
 	function ensureStyle() {
-		let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+		const existingStyle = document.getElementById(STYLE_ID);
 
-		if (!style) {
-			style = document.createElement('style');
-			style.id = STYLE_ID;
-			style.setAttribute('data-owner', 'dark-mode-lite');
-			(document.documentElement || document.head || document).appendChild(style);
+		if (existingStyle instanceof HTMLStyleElement) {
+			return existingStyle;
 		}
+
+		const style = document.createElement('style');
+
+		style.id = STYLE_ID;
+		style.setAttribute('data-owner', 'dark-mode-lite');
+		(document.documentElement || document.head || document).appendChild(style);
 
 		return style;
 	}
 
-	function applySettings(nextSettings: Partial<Settings>) {
+	function applySettings(nextSettings: unknown) {
 		const previousMode = settings.mode;
 
 		settings = migrateSettings(nextSettings);
@@ -495,11 +645,11 @@
 
 	function readSettings() {
 		chrome.storage.sync.get(null, (storedSettings) => {
-			applySettings(storedSettings as Partial<Settings>);
+			applySettings(storedSettings);
 		});
 	}
 
-	function updateSettings(patch: Partial<Settings>, callback?: (state: ExtensionState) => void) {
+	function updateSettings(patch: SettingsPatch, callback?: (state: ExtensionState) => void) {
 		const nextSettings = migrateSettings({
 			...settings,
 			...patch,
@@ -521,8 +671,10 @@
 		};
 	}
 
-	chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-		if (!message || message.source !== MESSAGE_SOURCE) {
+	chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
+		const message = parsePopupMessage(rawMessage);
+
+		if (!message) {
 			return false;
 		}
 
@@ -559,10 +711,10 @@
 			return;
 		}
 
-		const nextSettings: Partial<Settings> = { ...settings };
+		const nextSettings: Record<string, unknown> = { ...settings };
 
 		for (const [key, change] of Object.entries(changes)) {
-			nextSettings[key as keyof Settings] = change.newValue as never;
+			nextSettings[key] = change.newValue;
 		}
 
 		applySettings(nextSettings);

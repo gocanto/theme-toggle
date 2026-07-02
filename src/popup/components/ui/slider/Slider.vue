@@ -32,6 +32,14 @@ const percent = computed(() => {
 
 	return ((props.modelValue - props.min) / range) * 100;
 });
+
+function readRangeInputValue(event: Event) {
+	if (event.target instanceof HTMLInputElement) {
+		return Number(event.target.value);
+	}
+
+	return props.modelValue;
+}
 </script>
 
 <template>
@@ -47,8 +55,8 @@ const percent = computed(() => {
 			:max="max"
 			:step="step"
 			:value="modelValue"
-			@input="emit('update:modelValue', Number(($event.target as HTMLInputElement).value))"
-			@change="emit('commit', Number(($event.target as HTMLInputElement).value))"
+			@input="emit('update:modelValue', readRangeInputValue($event))"
+			@change="emit('commit', readRangeInputValue($event))"
 		/>
 	</div>
 </template>

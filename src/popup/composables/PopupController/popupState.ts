@@ -1,6 +1,7 @@
 import type { ExtensionState, Settings } from '@/types/settings';
 import { normalizeHost } from '@/types/settings';
 
+/** Extract a normalized host from a tab URL. */
 export function getActiveHost(activeTabUrl: string) {
 	if (!activeTabUrl) {
 		return '';
@@ -15,6 +16,7 @@ export function getActiveHost(activeTabUrl: string) {
 	}
 }
 
+/** Check whether a tab URL supports content-script injection. */
 export function canInjectIntoTab(activeTabUrl: string) {
 	if (!activeTabUrl) {
 		return false;
@@ -29,6 +31,7 @@ export function canInjectIntoTab(activeTabUrl: string) {
 	}
 }
 
+/** Build popup state from settings and the active tab URL. */
 export function buildPopupState(nextSettings: Settings, activeTabUrl: string): ExtensionState {
 	const host = getActiveHost(activeTabUrl);
 	const siteEnabled = nextSettings.siteOverrides?.[host] ?? true;

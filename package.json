@@ -9,9 +9,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
     "check:paths": "node scripts/check-paths.ts",
-    "check": "pnpm run check:paths && pnpm run typecheck && pnpm run build",
+    "check": "pnpm run check:paths && pnpm run test && pnpm run typecheck && pnpm run build",
     "format": "node scripts/format.ts changed",
     "format-all": "node scripts/format.ts all"
   },

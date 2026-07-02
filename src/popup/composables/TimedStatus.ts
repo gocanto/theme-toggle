@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 
+/** Manages a temporary popup status message. */
 export class TimedStatus {
 	readonly status = ref('');
 
@@ -7,6 +8,7 @@ export class TimedStatus {
 
 	constructor(private readonly duration = 1500) {}
 
+	/** Set a status message and clear it after the configured duration. */
 	set(text: string) {
 		this.status.value = text;
 		if (this.statusTimer) {
@@ -19,6 +21,7 @@ export class TimedStatus {
 		}, this.duration);
 	}
 
+	/** Clear any pending status timeout. */
 	dispose() {
 		if (!this.statusTimer) {
 			return;
