@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Personal Dark Mode Lite</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <div>
+          <h1>Dark Mode Lite</h1>
+          <p id="host">Current site</p>
+        </div>
+        <label class="switch" title="Enable extension globally">
+          <input id="enabled" type="checkbox">
+          <span></span>
+        </label>
+      </header>
+
+      <section class="group">
+        <div class="row">
+          <span>Site</span>
+          <button id="siteToggle" type="button">Toggle site</button>
+        </div>
+        <div class="segmented" role="group" aria-label="Mode">
+          <button id="modeSmart" type="button" data-mode="smart">Smart</button>
+          <button id="modeInvert" type="button" data-mode="invert">Invert</button>
+          <button id="modeSoft" type="button" data-mode="soft">Soft</button>
+        </div>
+      </section>
+
+      <section class="group">
+        <label>
+          <span>Brightness <output id="brightnessValue"></output></span>
+          <input id="brightness" type="range" min="50" max="150" step="1">
+        </label>
+        <label>
+          <span>Contrast <output id="contrastValue"></output></span>
+          <input id="contrast" type="range" min="50" max="150" step="1">
+        </label>
+        <label>
+          <span>Sepia <output id="sepiaValue"></output></span>
+          <input id="sepia" type="range" min="0" max="100" step="1">
+        </label>
+      </section>
+
+      <footer>
+        <button id="reset" type="button">Reset</button>
+        <span id="status" aria-live="polite"></span>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

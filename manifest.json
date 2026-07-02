@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Personal Dark Mode Lite",
+  "description": "A small dependency-free personal dark-mode extension.",
+  "version": "0.1.0",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_title": "Personal Dark Mode Lite",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}
