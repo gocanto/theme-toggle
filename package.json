@@ -11,8 +11,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "vue-tsc --noEmit",
     "check": "pnpm run typecheck && pnpm run build",
-    "format": "node scripts/format.mjs changed",
-    "format-all": "node scripts/format.mjs all"
+    "format": "node scripts/format.ts changed",
+    "format-all": "node scripts/format.ts all"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",
