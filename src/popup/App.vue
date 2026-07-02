@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {Ban, Check, MonitorCog, Moon, RotateCcw, Sparkles} from "@lucide/vue";
-import {computed, onMounted, ref} from "vue";
-import {Button} from "@/popup/components/ui/button";
-import {Slider} from "@/popup/components/ui/slider";
-import {Switch} from "@/popup/components/ui/switch";
+import { Ban, Check, MonitorCog, Moon, RotateCcw, Sparkles } from "@lucide/vue";
+import { computed, onMounted, ref } from "vue";
+import { Button } from "@/popup/components/ui/button";
+import { Slider } from "@/popup/components/ui/slider";
+import { Switch } from "@/popup/components/ui/switch";
 import {
   DEFAULT_SETTINGS,
   type ExtensionState,
@@ -11,14 +11,14 @@ import {
   type Settings,
   type ThemeMode,
   migrateSettings,
-  normalizeHost
+  normalizeHost,
 } from "@/types/settings";
-import {cn} from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-const modes: Array<{value: ThemeMode; label: string}> = [
-  {value: "smart", label: "Smart"},
-  {value: "invert", label: "Invert"},
-  {value: "soft", label: "Soft"}
+const modes: Array<{ value: ThemeMode; label: string }> = [
+  { value: "smart", label: "Smart" },
+  { value: "invert", label: "Invert" },
+  { value: "soft", label: "Soft" },
 ];
 
 const activeTabId = ref<number | null>(null);
@@ -29,10 +29,12 @@ const statusTimer = ref<number | null>(null);
 
 const settings = computed(() => currentState.value.settings);
 const isExtensionRuntime = computed(
-  () => typeof chrome !== "undefined" && Boolean(chrome.tabs && chrome.storage && chrome.scripting)
+  () => typeof chrome !== "undefined" && Boolean(chrome.tabs && chrome.storage && chrome.scripting),
 );
 const hostLabel = computed(() => currentState.value.host || "Preview mode");
-const siteActionLabel = computed(() => (currentState.value.siteEnabled ? "Disable here" : "Enable here"));
+const siteActionLabel = computed(() =>
+  currentState.value.siteEnabled ? "Disable here" : "Enable here",
+);
 
 function setStatus(text: string) {
   status.value = text;
@@ -79,7 +81,7 @@ function buildState(nextSettings: Settings): ExtensionState {
     settings: nextSettings,
     host,
     active: Boolean(nextSettings.enabled && siteEnabled),
-    siteEnabled
+    siteEnabled,
   };
 }
 
@@ -108,8 +110,8 @@ async function injectContentScript() {
   }
 
   await chrome.scripting.executeScript({
-    target: {tabId: activeTabId.value, allFrames: true},
-    files: ["src/content.js"]
+    target: { tabId: activeTabId.value, allFrames: true },
+    files: ["src/content.js"],
   });
 }
 
@@ -130,16 +132,43 @@ async function writeSettings(nextSettings: Settings) {
   await chrome.storage.sync.set(nextSettings);
 }
 
+async function applySettingsToActiveTab(nextSettings: Settings) {
+  if (!isExtensionRuntime.value || !canInjectIntoTab()) {
+    await writeSettings(nextSettings);
+    return buildState(nextSettings);
+  }
+
+  try {
+    return await sendToTab({
+      source: "personal-dark-mode-lite",
+      type: "set-settings",
+      patch: nextSettings,
+    });
+  } catch {
+    try {
+      await injectContentScript();
+      return await sendToTab({
+        source: "personal-dark-mode-lite",
+        type: "set-settings",
+        patch: nextSettings,
+      });
+    } catch {
+      await writeSettings(nextSettings);
+      return buildState(nextSettings);
+    }
+  }
+}
+
 async function getStateFromTab() {
   try {
-    return await sendToTab({source: "personal-dark-mode-lite", type: "get-state"});
+    return await sendToTab({ source: "personal-dark-mode-lite", type: "get-state" });
   } catch (error) {
     if (!canInjectIntoTab()) {
       throw error;
     }
 
     await injectContentScript();
-    return sendToTab({source: "personal-dark-mode-lite", type: "get-state"});
+    return sendToTab({ source: "personal-dark-mode-lite", type: "get-state" });
   }
 }
 
@@ -158,13 +187,29 @@ async function patchSettings(patch: Partial<Settings>, message = "Saved") {
     ...patch,
     siteOverrides: {
       ...existing.siteOverrides,
-      ...(patch.siteOverrides || {})
-    }
+      ...(patch.siteOverrides || {}),
+    },
   });
 
-  await writeSettings(nextSettings);
-  currentState.value = buildState(nextSettings);
+  currentState.value = await applySettingsToActiveTab(nextSettings);
   setStatus(message);
+}
+
+async function replaceSettings(nextSettings: Settings, message = "Saved") {
+  const normalizedSettings = migrateSettings(nextSettings);
+  currentState.value = await applySettingsToActiveTab(normalizedSettings);
+  setStatus(message);
+}
+
+async function selectMode(mode: ThemeMode) {
+  const host = currentState.value.host || getActiveHost();
+  const siteOverrides = { ...currentState.value.settings.siteOverrides };
+
+  if (host) {
+    siteOverrides[host] = true;
+  }
+
+  await patchSettings({ mode, siteOverrides }, "Saved");
 }
 
 async function toggleSite() {
@@ -179,15 +224,15 @@ async function toggleSite() {
     {
       siteOverrides: {
         ...currentState.value.settings.siteOverrides,
-        [host]: !siteEnabled
-      }
+        [host]: !siteEnabled,
+      },
     },
-    siteEnabled ? "Disabled here" : "Enabled here"
+    siteEnabled ? "Disabled here" : "Enabled here",
   );
 }
 
 async function resetSettings() {
-  await patchSettings(DEFAULT_SETTINGS, "Reset");
+  await replaceSettings(DEFAULT_SETTINGS, "Reset");
 }
 
 function showError(error: unknown) {
@@ -201,7 +246,7 @@ async function init() {
     return;
   }
 
-  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId.value = tab?.id || null;
   activeTabUrl.value = tab?.url || "";
 
@@ -231,7 +276,7 @@ onMounted(() => {
       <Switch
         :checked="settings.enabled"
         label="Enable extension globally"
-        @update:checked="patchSettings({enabled: $event}).catch(showError)"
+        @update:checked="patchSettings({ enabled: $event }).catch(showError)"
       />
     </header>
 
@@ -241,24 +286,34 @@ onMounted(() => {
           <MonitorCog class="size-4 text-emerald-300" aria-hidden="true" />
           <span class="truncate text-sm font-medium">Site</span>
         </div>
-        <Button variant="outline" size="sm" :disabled="!currentState.host" @click="toggleSite().catch(showError)">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="!currentState.host"
+          @click="toggleSite().catch(showError)"
+        >
           <component :is="currentState.siteEnabled ? Ban : Check" />
           {{ siteActionLabel }}
         </Button>
       </div>
 
-      <div class="grid grid-cols-3 overflow-hidden rounded-md border border-border" role="group" aria-label="Mode">
+      <div
+        class="grid grid-cols-3 overflow-hidden rounded-md border border-border"
+        role="group"
+        aria-label="Mode"
+      >
         <Button
           v-for="mode in modes"
           :key="mode.value"
           :class="
             cn(
               'h-8 rounded-none border-0 text-xs',
-              settings.mode === mode.value && 'bg-primary text-primary-foreground hover:bg-primary/90'
+              settings.mode === mode.value &&
+                'bg-primary text-primary-foreground hover:bg-primary/90',
             )
           "
           :variant="settings.mode === mode.value ? 'default' : 'ghost'"
-          @click="patchSettings({mode: mode.value}).catch(showError)"
+          @click="selectMode(mode.value).catch(showError)"
         >
           {{ mode.label }}
         </Button>
@@ -277,7 +332,7 @@ onMounted(() => {
           :max="150"
           label="Brightness"
           @update:model-value="currentState.settings.brightness = $event"
-          @commit="patchSettings({brightness: $event}).catch(showError)"
+          @commit="patchSettings({ brightness: $event }).catch(showError)"
         />
       </label>
 
@@ -292,7 +347,7 @@ onMounted(() => {
           :max="150"
           label="Contrast"
           @update:model-value="currentState.settings.contrast = $event"
-          @commit="patchSettings({contrast: $event}).catch(showError)"
+          @commit="patchSettings({ contrast: $event }).catch(showError)"
         />
       </label>
 
@@ -307,17 +362,25 @@ onMounted(() => {
           :max="100"
           label="Sepia"
           @update:model-value="currentState.settings.sepia = $event"
-          @commit="patchSettings({sepia: $event}).catch(showError)"
+          @commit="patchSettings({ sepia: $event }).catch(showError)"
         />
       </label>
     </section>
 
-    <footer class="flex min-h-8 items-center justify-between gap-3">
-      <Button variant="ghost" size="sm" title="Reset settings" @click="resetSettings().catch(showError)">
+    <footer class="flex min-h-8 items-center justify-between gap-3 border-t border-border pt-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        title="Reset settings"
+        @click="resetSettings().catch(showError)"
+      >
         <RotateCcw />
         Reset
       </Button>
-      <span class="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground" aria-live="polite">
+      <span
+        class="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground"
+        aria-live="polite"
+      >
         <Sparkles v-if="status" class="size-3" aria-hidden="true" />
         {{ status }}
       </span>
@@ -325,7 +388,11 @@ onMounted(() => {
 
     <p class="text-center text-xs text-muted-foreground">
       Made with love ❤️ by
-      <a class="font-medium text-foreground underline-offset-4 hover:underline" href="https://gocanto.sh" target="_blank">
+      <a
+        class="font-medium text-foreground underline-offset-4 hover:underline"
+        href="https://gocanto.sh"
+        target="_blank"
+      >
         gocanto.sh
       </a>
     </p>

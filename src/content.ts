@@ -1,5 +1,5 @@
 (() => {
-  const SCRIPT_VERSION = 4;
+  const SCRIPT_VERSION = 5;
   const loader = globalThis as typeof globalThis & {
     __PERSONAL_DARK_MODE_LITE_LOADED__?: number;
   };
@@ -35,7 +35,7 @@
     a: number;
   }
 
-  type StoredStyle = Record<string, {value: string; priority: string}>;
+  type StoredStyle = Record<string, { value: string; priority: string }>;
 
   const STYLE_ID = "personal-dark-mode-lite-style";
   const ROOT_ATTR = "data-pdm-lite-active";
@@ -48,10 +48,10 @@
     contrast: 92,
     sepia: 0,
     settingsVersion: 2,
-    siteOverrides: {}
+    siteOverrides: {},
   };
 
-  let settings = {...DEFAULT_SETTINGS};
+  let settings = { ...DEFAULT_SETTINGS };
   let smartObserver: MutationObserver | null = null;
   let smartScanTimer = 0;
   const originalStyles = new Map<HTMLElement, StoredStyle>();
@@ -95,7 +95,7 @@
       return null;
     }
 
-    return {r, g, b, a};
+    return { r, g, b, a };
   }
 
   function luminance(color: Color) {
@@ -117,7 +117,7 @@
     if (!Object.hasOwn(original, property)) {
       original[property] = {
         value: element.style.getPropertyValue(property),
-        priority: element.style.getPropertyPriority(property)
+        priority: element.style.getPropertyPriority(property),
       };
     }
   }
@@ -158,7 +158,7 @@
       "CANVAS",
       "SVG",
       "PATH",
-      "IFRAME"
+      "IFRAME",
     ].includes(element.tagName);
   }
 
@@ -211,7 +211,11 @@
       return;
     }
 
-    const elements = [document.documentElement, document.body, ...document.querySelectorAll("body *")];
+    const elements = [
+      document.documentElement,
+      document.body,
+      ...document.querySelectorAll("body *"),
+    ];
 
     for (let index = 0; index < elements.length && index < 5000; index += 1) {
       const element = elements[index];
@@ -238,7 +242,7 @@
     smartObserver = new MutationObserver(scheduleSmartScan);
     smartObserver.observe(document.documentElement, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
   }
 
@@ -262,8 +266,8 @@
       ...(storedSettings || {}),
       siteOverrides: {
         ...DEFAULT_SETTINGS.siteOverrides,
-        ...(storedSettings?.siteOverrides || {})
-      }
+        ...(storedSettings?.siteOverrides || {}),
+      },
     };
 
     if (!storedSettings?.settingsVersion && storedSettings?.mode === "invert") {
@@ -486,10 +490,9 @@
     const nextSettings = migrateSettings({
       ...settings,
       ...patch,
-      siteOverrides: {
-        ...settings.siteOverrides,
-        ...(patch.siteOverrides || {})
-      }
+      siteOverrides: patch.siteOverrides
+        ? { ...patch.siteOverrides }
+        : { ...settings.siteOverrides },
     });
 
     chrome.storage.sync.set(nextSettings, () => {
@@ -503,7 +506,7 @@
       settings,
       host: getHost(),
       active: isActive(settings),
-      siteEnabled: getSiteState(settings)
+      siteEnabled: getSiteState(settings),
     };
   }
 
@@ -526,10 +529,10 @@
       const host = getHost();
       const siteOverrides = {
         ...settings.siteOverrides,
-        [host]: !getSiteState(settings)
+        [host]: !getSiteState(settings),
       };
 
-      updateSettings({siteOverrides}, sendResponse);
+      updateSettings({ siteOverrides }, sendResponse);
       return true;
     }
 
@@ -541,7 +544,7 @@
       return;
     }
 
-    const nextSettings: Partial<Settings> = {...settings};
+    const nextSettings: Partial<Settings> = { ...settings };
     for (const [key, change] of Object.entries(changes)) {
       nextSettings[key as keyof Settings] = change.newValue as never;
     }
