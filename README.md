@@ -1,10 +1,13 @@
 # Personal Dark Mode Lite
 
-A small dependency-free Chrome extension that applies dark mode to regular web pages.
+A compact Chrome extension that applies dark mode to regular web pages. The project now builds an MV3 extension with Vite+, Vue, TypeScript, Tailwind CSS 4, and shadcn-vue style components.
 
 ## Features
 
-- Manifest V3 extension with no build step and no package dependencies.
+- Manifest V3 extension emitted to `dist`.
+- Vue popup built with shadcn-vue style controls and Lucide icons.
+- TypeScript content script for the page dark-mode engine.
+- Tailwind CSS 4 styling through the official Vite plugin.
 - Global enable/disable switch.
 - Per-site enable/disable using the normalized hostname.
 - Smart mode that darkens light surfaces while leaving already-dark areas alone.
@@ -14,10 +17,19 @@ A small dependency-free Chrome extension that applies dark mode to regular web p
 
 ## Install
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Click Load unpacked.
-4. Select this folder.
+1. Install dependencies with `npm install`.
+2. Build the extension with `npm run build`.
+3. Open `chrome://extensions`.
+4. Enable Developer mode.
+5. Click Load unpacked.
+6. Select the `dist` folder.
+
+## Development
+
+- `npm run dev` starts the Vite popup preview.
+- `npm run typecheck` runs Vue and TypeScript checks.
+- `npm run build` emits the loadable extension under `dist`.
+- `npm run check` runs typecheck and build together.
 
 ## Limits
 

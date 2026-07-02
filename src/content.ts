@@ -1,15 +1,47 @@
 (() => {
-  const SCRIPT_VERSION = 3;
-  if (globalThis.__PERSONAL_DARK_MODE_LITE_LOADED__ >= SCRIPT_VERSION) {
+  const SCRIPT_VERSION = 4;
+  const loader = globalThis as typeof globalThis & {
+    __PERSONAL_DARK_MODE_LITE_LOADED__?: number;
+  };
+
+  if ((loader.__PERSONAL_DARK_MODE_LITE_LOADED__ || 0) >= SCRIPT_VERSION) {
     return;
   }
-  globalThis.__PERSONAL_DARK_MODE_LITE_LOADED__ = SCRIPT_VERSION;
+  loader.__PERSONAL_DARK_MODE_LITE_LOADED__ = SCRIPT_VERSION;
+
+  type ThemeMode = "smart" | "invert" | "soft";
+
+  interface Settings {
+    enabled: boolean;
+    mode: ThemeMode;
+    brightness: number;
+    contrast: number;
+    sepia: number;
+    settingsVersion: number;
+    siteOverrides: Record<string, boolean>;
+  }
+
+  interface ExtensionState {
+    settings: Settings;
+    host: string;
+    active: boolean;
+    siteEnabled: boolean;
+  }
+
+  interface Color {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+  }
+
+  type StoredStyle = Record<string, {value: string; priority: string}>;
 
   const STYLE_ID = "personal-dark-mode-lite-style";
   const ROOT_ATTR = "data-pdm-lite-active";
   const MODE_ATTR = "data-pdm-lite-mode";
 
-  const DEFAULTS = {
+  const DEFAULT_SETTINGS: Settings = {
     enabled: true,
     mode: "smart",
     brightness: 100,
@@ -19,12 +51,12 @@
     siteOverrides: {}
   };
 
-  let settings = {...DEFAULTS};
-  let smartObserver = null;
+  let settings = {...DEFAULT_SETTINGS};
+  let smartObserver: MutationObserver | null = null;
   let smartScanTimer = 0;
-  const originalStyles = new Map();
+  const originalStyles = new Map<HTMLElement, StoredStyle>();
 
-  function normalizeHost(host) {
+  function normalizeHost(host: string) {
     return host.replace(/^www\./, "");
   }
 
@@ -42,7 +74,7 @@
     return Boolean(nextSettings.enabled && getSiteState(nextSettings));
   }
 
-  function clamp(value, min, max) {
+  function clamp(value: unknown, min: number, max: number) {
     const number = Number(value);
     if (!Number.isFinite(number)) {
       return min;
@@ -51,7 +83,7 @@
     return Math.min(max, Math.max(min, number));
   }
 
-  function parseColor(value) {
+  function parseColor(value: string) {
     const match = String(value).match(/rgba?\(([^)]+)\)/);
     if (!match) {
       return null;
@@ -66,16 +98,16 @@
     return {r, g, b, a};
   }
 
-  function luminance(color) {
-    const toLinear = (channel) => {
+  function luminance(color: Color) {
+    const toLinear = (channel: number) => {
       const value = channel / 255;
       return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
     };
 
-    return (0.2126 * toLinear(color.r)) + (0.7152 * toLinear(color.g)) + (0.0722 * toLinear(color.b));
+    return 0.2126 * toLinear(color.r) + 0.7152 * toLinear(color.g) + 0.0722 * toLinear(color.b);
   }
 
-  function rememberStyle(element, property) {
+  function rememberStyle(element: HTMLElement, property: string) {
     let original = originalStyles.get(element);
     if (!original) {
       original = {};
@@ -90,7 +122,7 @@
     }
   }
 
-  function setImportant(element, property, value) {
+  function setImportant(element: HTMLElement, property: string, value: string) {
     rememberStyle(element, property);
     element.style.setProperty(property, value, "important");
   }
@@ -113,7 +145,7 @@
     originalStyles.clear();
   }
 
-  function isSkippableElement(element) {
+  function isSkippableElement(element: HTMLElement) {
     return [
       "SCRIPT",
       "STYLE",
@@ -130,7 +162,7 @@
     ].includes(element.tagName);
   }
 
-  function smartenElement(element) {
+  function smartenElement(element: Element) {
     if (!(element instanceof HTMLElement) || isSkippableElement(element)) {
       return;
     }
@@ -179,14 +211,13 @@
       return;
     }
 
-    const elements = [
-      document.documentElement,
-      document.body,
-      ...document.querySelectorAll("body *")
-    ];
+    const elements = [document.documentElement, document.body, ...document.querySelectorAll("body *")];
 
     for (let index = 0; index < elements.length && index < 5000; index += 1) {
-      smartenElement(elements[index]);
+      const element = elements[index];
+      if (element) {
+        smartenElement(element);
+      }
     }
   }
 
@@ -225,12 +256,12 @@
     restoreSmartStyles();
   }
 
-  function migrateSettings(storedSettings) {
-    const nextSettings = {
-      ...DEFAULTS,
+  function migrateSettings(storedSettings?: Partial<Settings> | null): Settings {
+    const nextSettings: Settings = {
+      ...DEFAULT_SETTINGS,
       ...(storedSettings || {}),
       siteOverrides: {
-        ...DEFAULTS.siteOverrides,
+        ...DEFAULT_SETTINGS.siteOverrides,
         ...(storedSettings?.siteOverrides || {})
       }
     };
@@ -239,11 +270,11 @@
       nextSettings.mode = "smart";
     }
 
-    nextSettings.settingsVersion = DEFAULTS.settingsVersion;
+    nextSettings.settingsVersion = DEFAULT_SETTINGS.settingsVersion;
     return nextSettings;
   }
 
-  function createCSS(nextSettings) {
+  function createCSS(nextSettings: Settings) {
     const brightness = clamp(nextSettings.brightness, 50, 150);
     const contrast = clamp(nextSettings.contrast, 50, 150);
     const sepia = clamp(nextSettings.sepia, 0, 100);
@@ -407,7 +438,7 @@
   }
 
   function ensureStyle() {
-    let style = document.getElementById(STYLE_ID);
+    let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
     if (!style) {
       style = document.createElement("style");
       style.id = STYLE_ID;
@@ -418,7 +449,7 @@
     return style;
   }
 
-  function applySettings(nextSettings) {
+  function applySettings(nextSettings: Partial<Settings>) {
     const previousMode = settings.mode;
     settings = migrateSettings(nextSettings);
 
@@ -446,18 +477,20 @@
   }
 
   function readSettings() {
-    chrome.storage.sync.get(null, applySettings);
+    chrome.storage.sync.get(null, (storedSettings) => {
+      applySettings(storedSettings as Partial<Settings>);
+    });
   }
 
-  function updateSettings(patch, callback) {
-    const nextSettings = {
+  function updateSettings(patch: Partial<Settings>, callback?: (state: ExtensionState) => void) {
+    const nextSettings = migrateSettings({
       ...settings,
       ...patch,
       siteOverrides: {
         ...settings.siteOverrides,
         ...(patch.siteOverrides || {})
       }
-    };
+    });
 
     chrome.storage.sync.set(nextSettings, () => {
       applySettings(nextSettings);
@@ -465,7 +498,7 @@
     });
   }
 
-  function getState() {
+  function getState(): ExtensionState {
     return {
       settings,
       host: getHost(),
@@ -508,9 +541,9 @@
       return;
     }
 
-    const nextSettings = {...settings};
+    const nextSettings: Partial<Settings> = {...settings};
     for (const [key, change] of Object.entries(changes)) {
-      nextSettings[key] = change.newValue;
+      nextSettings[key as keyof Settings] = change.newValue as never;
     }
     applySettings(nextSettings);
   });
