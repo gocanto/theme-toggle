@@ -1,6 +1,6 @@
 import { PackageStoreError } from '#scripts/package-store/domain/package-store-error';
 
-const REQUIRED_DIST_FILES = ['manifest.json', 'popup/index.html', 'src/content.js', 'icons/icon-16.png', 'icons/icon-32.png', 'icons/icon-48.png', 'icons/icon-128.png'];
+const REQUIRED_DIST_FILES = ['manifest.json', 'index.html', 'content.js', 'icons/icon-16.png', 'icons/icon-32.png', 'icons/icon-48.png', 'icons/icon-128.png'];
 const REQUIRED_PERMISSIONS = ['activeTab', 'scripting', 'storage'];
 const BROAD_HOST_PERMISSIONS = ['http://*/*', 'https://*/*'];
 
