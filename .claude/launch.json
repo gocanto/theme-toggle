@@ -6,6 +6,19 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev", "--port", "5178"],
       "port": 5178
+    },
+    {
+      "name": "web-landing",
+      "runtimeExecutable": "portless",
+      "runtimeArgs": [
+        "web-landing",
+        "--app-port",
+        "5179",
+        "sh",
+        "-c",
+        "pnpm dev:web --port \"$PORT\" --strictPort"
+      ],
+      "port": 5179
     }
   ]
 }

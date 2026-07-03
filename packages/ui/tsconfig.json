@@ -1,0 +1,13 @@
+{
+  "extends": "@dml/tsconfig/base.json",
+  "compilerOptions": {
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@dml/ui": ["src/index.ts"],
+      "@dml/ui/utils": ["src/utils.ts"],
+      "@dml/ui/button": ["src/button/Button.vue"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"]
+}

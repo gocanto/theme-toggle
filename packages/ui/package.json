@@ -1,0 +1,31 @@
+{
+  "name": "@dml/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Shared UI primitives and class utilities for the Dark Mode - Lite apps.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./utils": "./src/utils.ts",
+    "./button": "./src/button/Button.vue"
+  },
+  "scripts": {
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "reka-ui": "catalog:",
+    "tailwind-merge": "catalog:"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.39"
+  },
+  "devDependencies": {
+    "@dml/tsconfig": "workspace:*",
+    "typescript": "catalog:",
+    "vue": "catalog:",
+    "vue-tsc": "catalog:"
+  }
+}

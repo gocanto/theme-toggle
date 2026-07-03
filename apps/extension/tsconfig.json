@@ -1,0 +1,16 @@
+{
+  "extends": "@dml/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["chrome"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@popup/*": ["src/popup/*"],
+      "@components/*": ["src/popup/components/*"],
+      "@composables/*": ["src/popup/composables/*"],
+      "@lib/*": ["src/lib/*"],
+      "@types/*": ["src/types/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "vite.config.ts", "vitest.config.ts"]
+}

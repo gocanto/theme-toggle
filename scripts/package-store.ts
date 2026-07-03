@@ -13,12 +13,14 @@ const NORMALIZED_ARCHIVE_TIME = new Date('2026-01-01T00:00:00Z');
 try {
 	const commandRunner = new NodeCommandRunner();
 	const repoRoot = new GitRepoRootResolver(commandRunner).resolve();
+	const extensionRoot = resolve(repoRoot, 'apps', 'extension');
 	const jsonReader = new NodeJsonReader(repoRoot);
 	const fileCollector = new DistFileCollector();
 	const releasesDir = process.env.STORE_RELEASES_DIR ?? resolve(repoRoot, 'release');
 
 	const command = new PackageStoreCommand({
 		repoRoot,
+		extensionRoot,
 		releasesDir,
 		commandRunner,
 		jsonReader,
