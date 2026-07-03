@@ -2,7 +2,7 @@
 import type { Component } from 'vue';
 import { computed } from 'vue';
 import { Contrast, Sparkles, Sun } from '@lucide/vue';
-import { cn } from '@lib/utils';
+import { cn } from '@dml/ui/utils';
 import type { ThemeMode } from '@/types/settings';
 
 const props = defineProps<{

@@ -28,7 +28,9 @@ export default defineConfig({
 			// all-source metric because the Vue UI layer has no unit tests yet.
 			provider: 'v8',
 			reporter: ['text', 'text-summary', 'json-summary'],
-			reportsDirectory: './coverage',
+			// Write to the repo-root coverage/ dir so the CI coverage gate keeps
+			// reading coverage/coverage-summary.json from the workspace root.
+			reportsDirectory: resolve(__dirname, '..', '..', 'coverage'),
 			exclude: ['src/**/*.{test,spec}.ts', 'src/**/*.d.ts'],
 			thresholds: {
 				lines: 50,
