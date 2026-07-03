@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
+	<title id="title">Dark Mode Lite icon</title>
+	<desc id="description">A teal light/dark contrast disc with a spark, on a dark rounded tile.</desc>
+	<defs>
+		<linearGradient id="b_bg" x1="72" y1="48" x2="440" y2="464" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#15292E" />
+			<stop offset="0.55" stop-color="#0D1C21" />
+			<stop offset="1" stop-color="#081215" />
+		</linearGradient>
+		<linearGradient id="b_fill" x1="256" y1="110" x2="400" y2="402" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#5CF6E4" />
+			<stop offset="1" stop-color="#10B3A4" />
+		</linearGradient>
+		<radialGradient id="b_glow" cx="0.5" cy="0.5" r="0.55">
+			<stop offset="0" stop-color="#2FE0CE" stop-opacity="0.45" />
+			<stop offset="1" stop-color="#2FE0CE" stop-opacity="0" />
+		</radialGradient>
+		<clipPath id="b_right">
+			<rect x="256" y="80" width="200" height="352" />
+		</clipPath>
+	</defs>
+
+	<rect x="0" y="0" width="512" height="512" rx="120" fill="url(#b_bg)" />
+	<rect x="2.5" y="2.5" width="507" height="507" rx="117.5" fill="none" stroke="#2FE0CE" stroke-opacity="0.22" stroke-width="3" />
+
+	<ellipse cx="256" cy="256" rx="180" ry="180" fill="url(#b_glow)" />
+
+	<circle cx="256" cy="256" r="134" fill="url(#b_fill)" clip-path="url(#b_right)" />
+	<circle cx="256" cy="256" r="134" fill="none" stroke="url(#b_fill)" stroke-width="20" />
+
+	<path d="M372 118 L380.5 141 L403 149.5 L380.5 158 L372 181 L363.5 158 L341 149.5 L363.5 141 Z" fill="#D3FBF4" />
+</svg>

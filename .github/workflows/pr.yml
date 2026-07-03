@@ -1,0 +1,114 @@
+name: PR
+
+# PR-only CI. Fast unit & feature tests run on every PR (draft or ready).
+# Heavier jobs are opt-in via labels and are otherwise skipped:
+#   - coverage-all: run instrumented coverage + sticky >=50% comment (replaces fast tests)
+#   - e2e-*       : run the E2E matrix (ready-for-review PRs only)
+# Applying/removing a label re-triggers this workflow (labeled/unlabeled below).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # Fast unit & feature tests. Runs unless the PR opts into coverage-all,
+  # so exactly one of fast-tests / coverage-all ever runs.
+  fast-tests:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'coverage-all') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check:paths
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run build
+
+  # Instrumented coverage gate (opt-in via the coverage-all label). Enforces
+  # >=50% lines/functions/branches (thresholds live in vitest.config.ts) and
+  # posts a sticky PR comment with the numbers.
+  coverage-all:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'coverage-all') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check:paths
+      - run: pnpm run typecheck
+      - name: Coverage
+        id: cov
+        continue-on-error: true
+        run: pnpm run test:coverage
+      - run: pnpm run build
+      - name: Sticky coverage comment
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- coverage-sticky -->';
+            const passed = '${{ steps.cov.outcome }}' === 'success';
+            let body = `${marker}\n### Coverage ${passed ? '✅' : '❌'}\n`;
+            try {
+              const s = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')).total;
+              const row = (k) => `| ${k} | ${s[k].pct}% | ${s[k].covered}/${s[k].total} |`;
+              body += [
+                '',
+                'Coverage of code exercised by the unit & feature suite. Gate: **≥ 50%** on lines, functions, branches.',
+                '',
+                '| Metric | % | Covered/Total |',
+                '| --- | --- | --- |',
+                row('lines'), row('functions'), row('branches'), row('statements'),
+              ].join('\n');
+            } catch (e) {
+              body += `\nNo coverage summary was produced (${e.message}).`;
+            }
+            if (!passed) body += '\n\n> ❌ Coverage is below the 50% gate — see the job log.';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: Enforce coverage gate
+        if: ${{ steps.cov.outcome != 'success' }}
+        run: |
+          echo "Coverage gate failed (< 50%). See the Coverage step above."
+          exit 1
+
+  # E2E matrix (opt-in via any e2e-* label). Ready-for-review PRs only —
+  # skipped on drafts. No Playwright specs exist yet, so the job reports that
+  # and passes; it becomes a real matrix once e2e specs land.
+  e2e:
+    if: ${{ !github.event.pull_request.draft && contains(join(github.event.pull_request.labels.*.name, ','), 'e2e-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run E2E (Playwright-managed Chromium)
+        run: |
+          if [ -f playwright.config.ts ] || [ -d e2e ]; then
+            echo "Playwright config/specs found but no runner is wired yet." >&2
+            exit 1
+          fi
+          echo "::notice title=E2E::No Playwright E2E specs exist yet; nothing to run. Add specs + playwright.config.ts to enable the matrix."
