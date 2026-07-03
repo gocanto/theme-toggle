@@ -36,6 +36,7 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run test
       - run: pnpm run build
+      - run: pnpm run build:web
 
   # Instrumented coverage gate (opt-in via the coverage-all label). Enforces
   # >=50% lines/functions/branches (thresholds live in vitest.config.ts) and
@@ -58,6 +59,7 @@ jobs:
         continue-on-error: true
         run: pnpm run test:coverage
       - run: pnpm run build
+      - run: pnpm run build:web
       - name: Sticky coverage comment
         if: ${{ always() }}
         uses: actions/github-script@v7

@@ -6,17 +6,21 @@
   "description": "A compact MV3 dark-mode extension built with Vue, Vite+, Tailwind CSS, and shadcn-vue.",
   "packageManager": "pnpm@11.9.0",
   "imports": {
-    "#scripts/*": "./scripts/*.ts"
+    "#scripts/*": "./scripts/*.ts",
+    "#web/*": "./web/src/*.ts"
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "dev:web": "vitepress dev web --host 127.0.0.1",
+    "build:web": "vitepress build web",
+    "preview:web": "vitepress preview web --host 127.0.0.1",
     "test": "vp test run",
     "test:coverage": "vp test run --coverage",
     "typecheck": "vue-tsc --noEmit",
     "check:paths": "node scripts/check-paths.ts",
-    "check": "pnpm run check:paths && pnpm run test && pnpm run typecheck && pnpm run build",
+    "check": "pnpm run check:paths && pnpm run test && pnpm run typecheck && pnpm run build && pnpm run build:web",
     "package:store": "node scripts/package-store.ts",
     "format": "node scripts/format.ts changed",
     "format-all": "node scripts/format.ts all"
@@ -43,6 +47,7 @@
     "typescript": "^5.9.3",
     "vite": "^8.1.3",
     "vite-plus": "^0.2.1",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.6"
   }

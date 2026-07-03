@@ -20,12 +20,14 @@
     "baseUrl": ".",
     "paths": {
       "#scripts/*": ["scripts/*"],
+      "#web/*": ["web/src/*"],
       "@/*": ["src/*"],
       "@popup/*": ["src/popup/*"],
       "@components/*": ["src/popup/components/*"],
       "@composables/*": ["src/popup/composables/*"],
       "@lib/*": ["src/lib/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@web/*": ["web/src/*"]
     }
   },
   "include": [
@@ -34,6 +36,10 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "scripts/**/*.ts",
+    "web/**/*.ts",
+    "web/**/*.vue",
+    "web/.vitepress/**/*.ts",
+    "web/.vitepress/**/*.vue",
     "vite.config.ts"
   ]
 }

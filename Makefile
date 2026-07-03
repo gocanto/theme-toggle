@@ -4,7 +4,7 @@ PNPM := pnpm
 
 .DEFAULT_GOAL := help
 
-.PHONY: help format format-all typecheck build check
+.PHONY: help format format-all typecheck build check web build-web
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"; printf "Available targets:\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -20,6 +20,12 @@ typecheck: ## Run TypeScript/Vue type checks
 
 build: ## Build the extension
 	$(PNPM) run build
+
+web: ## Run the landing-page dev server (VitePress)
+	$(PNPM) run dev:web
+
+build-web: ## Build the landing page (VitePress)
+	$(PNPM) run build:web
 
 check: ## Run the project verification script
 	$(PNPM) run check
