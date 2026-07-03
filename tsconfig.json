@@ -1,45 +1,12 @@
 {
+  "extends": "@dml/tsconfig/base.json",
+  "docs": "Root project: type-checks the repo tooling under scripts/. Each app/package owns its own tsconfig and is checked via `pnpm -r typecheck`.",
   "compilerOptions": {
-    "target": "ES2022",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "types": ["chrome"],
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "#scripts/*": ["scripts/*"],
-      "#web/*": ["web/src/*"],
-      "@/*": ["src/*"],
-      "@popup/*": ["src/popup/*"],
-      "@components/*": ["src/popup/components/*"],
-      "@composables/*": ["src/popup/composables/*"],
-      "@lib/*": ["src/lib/*"],
-      "@types/*": ["src/types/*"],
-      "@web/*": ["web/src/*"]
+      "#scripts/*": ["scripts/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "scripts/**/*.ts",
-    "web/**/*.ts",
-    "web/**/*.vue",
-    "web/.vitepress/**/*.ts",
-    "web/.vitepress/**/*.vue",
-    "vite.config.ts"
-  ]
+  "include": ["scripts/**/*.ts"]
 }
