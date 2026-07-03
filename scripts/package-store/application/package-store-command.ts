@@ -11,6 +11,7 @@ import type { ZipStorePackageWriter } from '#scripts/package-store/infra/zip-sto
  */
 export type PackageStoreCommandInput = {
 	readonly repoRoot: string;
+	readonly extensionRoot: string;
 	readonly releasesDir: string;
 	readonly commandRunner: NodeCommandRunner;
 	readonly jsonReader: NodeJsonReader;
@@ -38,7 +39,7 @@ export class PackageStoreCommand {
 	 * Build the extension, validate dist, and write the store package.
 	 */
 	async run() {
-		const distRoot = resolve(this.input.repoRoot, 'dist');
+		const distRoot = resolve(this.input.extensionRoot, 'dist');
 
 		this.input.commandRunner.run('pnpm', ['run', 'build'], this.input.repoRoot);
 
@@ -51,7 +52,7 @@ export class PackageStoreCommand {
 		this.input.packagePolicy.assertManifest(manifest);
 
 		const version = this.input.packagePolicy.getManifestVersion(manifest);
-		const packageJson = this.input.jsonReader.readObject(resolve(this.input.repoRoot, 'package.json'));
+		const packageJson = this.input.jsonReader.readObject(resolve(this.input.extensionRoot, 'package.json'));
 		const packageName = PackageName.fromPackageJson(packageJson);
 		const zipPath = resolve(this.input.releasesDir, `${packageName.toString()}-${version}.zip`);
 

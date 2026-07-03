@@ -20,7 +20,7 @@ interface Finding {
 const PATH_SEPARATOR = '/';
 const CURRENT_DIRECTORY_PREFIX = `.${PATH_SEPARATOR}`;
 const PARENT_DIRECTORY_PREFIX = `..${PATH_SEPARATOR}`;
-const CHECKED_PATHS = ['src', 'scripts', 'web', 'vite.config.ts'];
+const CHECKED_PATHS = ['apps', 'packages', 'scripts'];
 const VUE_SCRIPT_BLOCK = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.vue']);
 
@@ -70,23 +70,11 @@ function scanFile(file: string, text: string) {
 }
 
 function isCheckedFile(file: string) {
-	if (file === 'vite.config.ts') {
-		return true;
+	if (!SOURCE_EXTENSIONS.has(extname(file))) {
+		return false;
 	}
 
-	if (file.startsWith(`scripts${PATH_SEPARATOR}`)) {
-		return extname(file) === '.ts';
-	}
-
-	if (file.startsWith(`src${PATH_SEPARATOR}`)) {
-		return SOURCE_EXTENSIONS.has(extname(file));
-	}
-
-	if (file.startsWith(`web${PATH_SEPARATOR}`)) {
-		return SOURCE_EXTENSIONS.has(extname(file));
-	}
-
-	return false;
+	return CHECKED_PATHS.some((base) => file === base || file.startsWith(`${base}${PATH_SEPARATOR}`));
 }
 
 function extractChunks(file: string, text: string): SourceChunk[] {
