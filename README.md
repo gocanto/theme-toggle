@@ -42,18 +42,18 @@ Then load it in Chrome:
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
-3. **Load unpacked** → select the `dist/` folder
+3. **Load unpacked** → select the `apps/extension/dist/` folder
 
 ## How it works
 
 Two independent pieces talk over Chrome's messaging APIs:
 
-- **Popup** (`src/popup/`) — a Vue 3 + Tailwind 4 UI. State lives in a `PopupController`
-  class that reads/writes settings and mirrors them to the active tab.
-- **Content script** (`src/content.ts`) — a `ContentScript` class that injects the CSS/JS
-  that actually darkens the page, per the selected mode.
+- **Popup** (`apps/extension/src/popup/`) — a Vue 3 + Tailwind 4 UI. State lives in a
+  `PopupController` class that reads/writes settings and mirrors them to the active tab.
+- **Content script** (`apps/extension/src/content.ts`) — a `ContentScript` class that injects
+  the CSS/JS that actually darkens the page, per the selected mode.
 
-Both share the same `Settings` shape (`src/types/settings.ts`). All non‑component logic is
+Both share the same `Settings` shape (`apps/extension/src/types/settings.ts`). All non‑component logic is
 class‑based (`SettingsCodec`, `ChromeRuntimeAdapter`, `SettingsGateway`, `PopupStateBuilder`,
 `ContentScript`); Vue single‑file components and the `usePopupController` composable stay
 idiomatic.
@@ -67,15 +67,21 @@ idiomatic.
 Requires **Node 24+** and **pnpm 11+**.
 
 ```bash
-pnpm install        # install dependencies
-pnpm dev            # run the popup in a Vite dev server (preview mode)
-pnpm build          # build the loadable extension into dist/
-pnpm test           # run unit/feature tests (Vitest)
-pnpm typecheck      # vue-tsc type check
-pnpm check          # paths + tests + typecheck + build (run before pushing)
+pnpm install        # install workspace dependencies
+pnpm dev            # run the popup in a Vite+ dev server (preview mode)
+pnpm build          # build the loadable extension into apps/extension/dist/
+pnpm dev:web        # run the marketing site (VitePress) dev server
+pnpm build:web      # build the marketing site into apps/web/.vitepress/dist/
+pnpm test           # run unit/feature tests (Vitest, via Vite+)
+pnpm typecheck      # vue-tsc type check across all packages
+pnpm check          # paths + tests + typecheck + builds (run before pushing)
 pnpm package:store  # build + validate + zip the Chrome Web Store package
 pnpm format-all     # format the whole tree
 ```
+
+This is a **pnpm workspace monorepo**: the extension build uses **Vite+** (`vp`); the website
+uses the **VitePress** engine with a custom theme layered on top. Root scripts delegate to the
+relevant workspace package via `pnpm --filter`.
 
 Releasing to the Chrome Web Store (packaging and the automated publish workflow) is
 documented in [docs/chrome-web-store.md](docs/chrome-web-store.md).
@@ -86,17 +92,27 @@ renders in "Live preview" mode against default settings — handy for iterating 
 ### Project layout
 
 ```text
-index.html                       # popup entry (Vite root entry)
-public/
-  manifest.json                  # MV3 manifest (copied verbatim into dist/)
-  icons/                         # extension icons (16/32/48/128)
-src/
-  content.ts                     # page dark-mode engine (ContentScript class)
-  types/settings.ts              # shared Settings model + SettingsCodec
-  popup/
-    App.vue                      # popup root
-    components/                  # UI (popup sections + shadcn-vue primitives)
-    composables/PopupController/ # controller, runtime adapter, settings gateway
+apps/
+  extension/                     # @dml/extension — the MV3 Chrome extension (Vite+)
+    index.html                   # popup entry (Vite+ root entry)
+    public/
+      manifest.json              # MV3 manifest (copied verbatim into dist/)
+      icons/                     # extension icons (16/32/48/128)
+    src/
+      content.ts                 # page dark-mode engine (ContentScript class)
+      types/settings.ts          # shared Settings model + SettingsCodec
+      popup/
+        App.vue                  # popup root
+        components/              # UI (popup sections + shadcn-vue primitives)
+        composables/PopupController/ # controller, runtime adapter, settings gateway
+  web/                           # @dml/web — the marketing site (VitePress, deploys to Cloudflare Pages)
+    .vitepress/                  # VitePress config + custom theme entry
+    src/                         # Layout, views, components, styles
+    wrangler.jsonc               # Cloudflare Pages project
+packages/
+  ui/                            # @dml/ui — shared cn() util + Button primitive
+  tsconfig/                      # @dml/tsconfig — shared TypeScript base config
+scripts/                         # repo tooling (check-paths, format, package-store)
 storage/                         # Chrome Web Store assets (screenshots, promo art) — not shipped
 ```
 
