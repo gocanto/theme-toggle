@@ -53,7 +53,8 @@ function validateDist() {
 	const manifest = readJsonObject(resolve(distRoot, 'manifest.json'));
 
 	assertStringField(manifest, 'name', 'Dark Mode - Lite');
-	assertStringField(manifest, 'description', 'A compact dark-mode extension built with Vue and Tailwind CSS.');
+	assertStringField(manifest, 'description', 'A compact dark-mode extension made by gocanto.sh with Vue and Tailwind CSS.');
+	assertStringField(manifest, 'homepage_url', 'https://github.com/gocanto/ex-dark-mode-lite');
 	assertNumberField(manifest, 'manifest_version', 3);
 	assertArrayField(manifest, 'permissions', REQUIRED_PERMISSIONS);
 	assertArrayField(manifest, 'host_permissions', BROAD_HOST_PERMISSIONS);
