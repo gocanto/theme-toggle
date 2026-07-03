@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 
-/* Scan the shared UI package (symlinked under node_modules, so auto-detection skips it). */
-@source '../../../../packages/ui/src';
+/* Register the shared UI package by name so Tailwind scans its class usage
+   (node_modules is otherwise skipped by auto-detection). */
+@source '@dml/ui';
 
 /* Inclusive max-width breakpoints matching the original design (Tailwind's max-[…] is exclusive). */
 @custom-variant max-920 (@media (max-width: 920px));
