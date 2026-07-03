@@ -13,6 +13,7 @@
     "typecheck": "vue-tsc --noEmit",
     "check:paths": "node scripts/check-paths.ts",
     "check": "pnpm run check:paths && pnpm run test && pnpm run typecheck && pnpm run build",
+    "package:store": "node scripts/package-store.ts",
     "format": "node scripts/format.ts changed",
     "format-all": "node scripts/format.ts all"
   },
