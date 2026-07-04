@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -51,9 +53,10 @@ jobs:
       - name: Resolve package path
         id: pkg
         run: |
-          zip=$(ls "${{ github.workspace }}/release"/*.zip | head -1)
+          tag_version="${GITHUB_REF_NAME#v}"
+          zip="${{ github.workspace }}/release/dark-mode-lite-${tag_version}.zip"
           if [ ! -f "$zip" ]; then
-            echo "::error title=No package::package:store did not produce a zip" && exit 1
+            echo "::error title=No package::expected package $zip was not produced" && exit 1
           fi
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "Packaged: $zip"
