@@ -3,7 +3,7 @@ SHELL := /bin/bash
 PNPM := pnpm
 
 # Cloudflare Pages deploy target (override CF_BRANCH=<branch> for a preview deploy).
-CF_PAGES_PROJECT := dark-mode-lite-web
+CF_PAGES_PROJECT := ex-dark-mode-lite
 CF_BRANCH ?= main
 
 .DEFAULT_GOAL := help

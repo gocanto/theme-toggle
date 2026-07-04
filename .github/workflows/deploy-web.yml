@@ -42,4 +42,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/web
-          command: pages deploy .vitepress/dist --project-name=dark-mode-lite-web --branch=${{ inputs.branch }}
+          command: pages deploy .vitepress/dist --project-name=ex-dark-mode-lite --branch=${{ inputs.branch }}
