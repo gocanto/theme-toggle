@@ -1,15 +1,16 @@
 name: GitHub Release
 
 # Publishes the built Chrome Web Store zip as a downloadable GitHub Release
-# asset. Cut a release by pushing a version tag (e.g. `v0.1.0`), typically right
-# after the version bump is merged to `main`.
-#
-# The tag is a git ref, not the `main` branch, so this workflow does not add a
-# job to `main` (see AGENTS.md). The build reuses `pnpm run package:store`, which
-# validates the extension against StorePackagePolicy and writes
+# asset. On `main`, the release tag is derived from the extension manifest
+# version and created automatically when it does not already exist. Pushed
+# version tags (e.g. `v0.1.0`) are still supported and must match the manifest
+# version. The build reuses `pnpm run package:store`, which validates the
+# extension against StorePackagePolicy and writes
 # `release/dark-mode-lite-<version>.zip`.
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
 
@@ -26,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -35,42 +36,86 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Verify tag matches the extension manifest version
+      - name: Resolve release tag from the extension manifest
+        id: release
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
           manifest_version=$(jq -r '.version' apps/extension/public/manifest.json)
-          if [ "$tag_version" != "$manifest_version" ]; then
-            echo "::error title=Version mismatch::tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}"
+          tag_name="v${manifest_version}"
+
+          echo "version=${manifest_version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag_name}" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            if [ "${GITHUB_REF_NAME}" != "${tag_name}" ]; then
+              echo "::error title=Version mismatch::tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}"
+              exit 1
+            fi
+
+            echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${GITHUB_REF_NAME} matches manifest version ${manifest_version}."
+            exit 0
+          fi
+
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            echo "::error title=Unsupported ref::expected main or a v* tag, got ${GITHUB_REF}"
             exit 1
           fi
-          echo "Tag ${GITHUB_REF_NAME} matches manifest version ${manifest_version}."
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag_name}" >/dev/null 2>&1; then
+            echo "::notice title=Release already exists::${tag_name} already exists; skipping GitHub Release creation."
+            echo "create_tag=false" >> "$GITHUB_OUTPUT"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "create_tag=true" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Build and package the store zip
+        if: ${{ steps.release.outputs.skip != 'true' }}
         env:
           STORE_RELEASES_DIR: ${{ github.workspace }}/release
         run: pnpm run package:store
 
       - name: Resolve package path
+        if: ${{ steps.release.outputs.skip != 'true' }}
         id: pkg
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
-          zip="${{ github.workspace }}/release/dark-mode-lite-${tag_version}.zip"
+          zip="${{ github.workspace }}/release/dark-mode-lite-${{ steps.release.outputs.version }}.zip"
           if [ ! -f "$zip" ]; then
             echo "::error title=No package::expected package $zip was not produced" && exit 1
           fi
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "Packaged: $zip"
 
+      - name: Create release tag
+        if: ${{ steps.release.outputs.create_tag == 'true' }}
+        run: |
+          git tag "${{ steps.release.outputs.tag }}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${{ steps.release.outputs.tag }}"
+
       - name: Create GitHub Release and attach the zip
+        if: ${{ steps.release.outputs.skip != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: ${{ steps.pkg.outputs.zip }}
           generate_release_notes: true
           fail_on_unmatched_files: true
 
       - name: Summary
         if: ${{ always() }}
+        env:
+          PACKAGE_PATH: ${{ steps.pkg.outputs.zip }}
+          RELEASE_SKIP: ${{ steps.release.outputs.skip }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
           echo "### GitHub Release" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Tag: \`${GITHUB_REF_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Package: \`$(basename "${{ steps.pkg.outputs.zip }}")\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tag: \`${RELEASE_TAG}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${RELEASE_SKIP}" = "true" ]; then
+            echo "- Result: skipped because the tag already exists" >> "$GITHUB_STEP_SUMMARY"
+          elif [ -n "${PACKAGE_PATH}" ]; then
+            echo "- Package: \`$(basename "${PACKAGE_PATH}")\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
